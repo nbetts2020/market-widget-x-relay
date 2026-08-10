@@ -1,0 +1,40 @@
+name: Refresh X news relay
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/x-proxy.yml"
+      - "scripts/fetch-x-proxy.mjs"
+      - "scripts/x-reporters.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: x-news-relay
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch current reporter timelines
+        env:
+          X_PROXY_OUTPUT: /tmp/x-proxy.json
+        run: node scripts/fetch-x-proxy.mjs
+      - name: Send current cache to Market Widget
+        env:
+          X_INGEST_SECRET: ${{ secrets.X_INGEST_SECRET }}
+        run: |
+          curl --fail-with-body --retry 2 \
+            -X POST \
+            -H "Authorization: Bearer ${X_INGEST_SECRET}" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/x-proxy.json \
+            https://openmarket-nfl-feed.openmarket-nfl-live.workers.dev/admin/x-ingest
