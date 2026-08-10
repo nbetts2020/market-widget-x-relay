@@ -100,7 +100,10 @@ const scoreboardPayload = await fetchJson(SCOREBOARD_URL);
 const games = scoreboardPayload?.scoreboard?.games || [];
 if (!games.length) throw new Error("No current-week games returned by the managed feed");
 
-const slot = Math.floor(Date.now() / 300000) % 3;
+const requestedSlot = Number(process.env.X_PROXY_SLOT);
+const slot = Number.isInteger(requestedSlot) && requestedSlot >= 0 && requestedSlot <= 2
+  ? requestedSlot
+  : Math.floor(Date.now() / 300000) % 3;
 const selectedGames = games.filter((_, index) => index % 3 === slot);
 const groups = [reporters.national, ...selectedGames.map((game) => [
   ...(reporters.teams[game.away?.abbreviation] || []),

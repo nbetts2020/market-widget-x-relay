@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+    inputs:
+      slot:
+        description: "Optional rotation slot (0, 1, or 2)"
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
@@ -27,6 +32,7 @@ jobs:
       - name: Fetch current reporter timelines
         env:
           X_PROXY_OUTPUT: /tmp/x-proxy.json
+          X_PROXY_SLOT: ${{ inputs.slot }}
         run: node scripts/fetch-x-proxy.mjs
       - name: Send current cache to Market Widget
         env:
