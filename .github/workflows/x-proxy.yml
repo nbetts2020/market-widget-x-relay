@@ -2,13 +2,8 @@ name: Refresh X news relay
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
-    inputs:
-      slot:
-        description: "Optional rotation slot (0, 1, or 2)"
-        required: false
-        type: string
   push:
     branches: [main]
     paths:
@@ -19,20 +14,23 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: x-news-relay
-  cancel-in-progress: true
-
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        slot: [0, 1, 2]
+    concurrency:
+      group: x-news-relay-${{ matrix.slot }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - name: Fetch current reporter timelines
         env:
           X_PROXY_OUTPUT: /tmp/x-proxy.json
-          X_PROXY_SLOT: ${{ inputs.slot }}
+          X_PROXY_SLOT: ${{ matrix.slot }}
         run: node scripts/fetch-x-proxy.mjs
       - name: Send current cache to Market Widget
         env:
