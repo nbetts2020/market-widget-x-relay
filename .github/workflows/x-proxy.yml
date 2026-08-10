@@ -1,8 +1,6 @@
 name: Refresh X news relay
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
